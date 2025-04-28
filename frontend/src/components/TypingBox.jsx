@@ -665,24 +665,41 @@ const TypingBox = () => {
     setIsLoading(true);
   
     try {
-      console.log("Attempting to fetch words from the online API...");
-      
-      // Try fetching from real online API
-      const onlineResponse = await axios.get("https://api.quotable.io/random"); // for full sentences
-      console.log("Successfully fetched from online API:", onlineResponse.data);
+      console.log(`Attempting to fetch ${contentType} words from online API...`);
   
-      const data = onlineResponse.data;
+      let apiUrl = "";
   
-      if (data?.content) {
+      // Select API based on contentType
+      if (contentType === "word") {
+        apiUrl = "https://random-word-api.herokuapp.com/word?number=10"; // Random words
+      } else if (contentType === "quote") {
+        apiUrl = "https://api.quotable.io/random"; // Random quote
+      } else if (contentType === "punctuation") {
+        apiUrl = "https://baconipsum.com/api/?type=meat-and-filler&sentences=3"; // Random text with punctuation
+      } else if (contentType === "number") {
+        apiUrl = "https://random-word-api.herokuapp.com/word?number=10"; // We'll add numbers manually below
+      }
+  
+      const response = await axios.get(apiUrl);
+      console.log("Fetched data:", response.data);
+  
+      if (contentType === "quote") {
         setIsFullText(true);
-        setWords([data.content]);
-      } else if (Array.isArray(data) && data.length > 0) {
+        setWords([response.data.content]); // quotable API returns {content: "text"}
+      } else if (contentType === "punctuation") {
+        setIsFullText(true);
+        setWords([response.data.join(" ")]); // baconipsum returns array of sentences
+      } else if (contentType === "number") {
+        // Random word + number
+        const numberWords = response.data.map(word => word + Math.floor(Math.random() * 1000));
         setIsFullText(false);
-        setWords(data);
+        setWords(numberWords);
+      } else if (contentType === "word") {
+        setIsFullText(false);
+        setWords(response.data); // array of words
       } else {
         setIsFullText(false);
-        setWords(["Error loading online content"]);
-        console.warn("Unexpected data format from online API:", data);
+        setWords(["Error: Unknown contentType"]);
       }
   
     } catch (error) {
@@ -707,7 +724,6 @@ const TypingBox = () => {
       setIsLoading(false);
     }
   };
-  
   
   
 
