@@ -609,6 +609,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
+import { fetchWordsWithFallback } from "../services/wordService"; 
 
 const TypingBox = () => {
   const { user } = useAuth();
@@ -627,34 +628,87 @@ const TypingBox = () => {
   const [showTimeDropdown, setShowTimeDropdown] = useState(false);
   const [isFullText, setIsFullText] = useState(false); // Track if we're using a sentence/quote
   const [isLoading, setIsLoading] = useState(true);
+  // const fetchWords = async () => {
+  //   setIsLoading(true);
+  //   try {
+  //     const response = await axios.get(`/api/words/random?type=${contentType}`);
+  //     const data = response.data;
+  
+  //     if (data?.fullText) {
+  //       // If backend sent full sentence (quote, punctuation, number)
+  //       setIsFullText(true);
+  //       setWords([data.fullText]);
+  //     } else if (Array.isArray(data) && data.length > 0) {
+  //       // If backend sent array of words
+  //       setIsFullText(false);
+  //       setWords(data);
+  //     } else {
+  //       // Fallback if somehow data is weird
+  //       setIsFullText(false);
+  //       setWords(["Error loading content"]);
+  //       console.warn("Unexpected API response:", data);
+  //     }
+  //   } catch (error) {
+  //     console.error("Failed to fetch words:", error);
+  //     setIsFullText(false);
+  //     setWords(["Error fetching words"]);
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
+
+
+
+  // Import new service
+
   const fetchWords = async () => {
     setIsLoading(true);
-    try {
-      const response = await axios.get(`/api/words/random?type=${contentType}`);
-      const data = response.data;
   
-      if (data?.fullText) {
-        // If backend sent full sentence (quote, punctuation, number)
+    try {
+      console.log("Attempting to fetch words from the online API...");
+      
+      // Try fetching from real online API
+      const onlineResponse = await axios.get("https://api.quotable.io/random"); // for full sentences
+      console.log("Successfully fetched from online API:", onlineResponse.data);
+  
+      const data = onlineResponse.data;
+  
+      if (data?.content) {
         setIsFullText(true);
-        setWords([data.fullText]);
+        setWords([data.content]);
       } else if (Array.isArray(data) && data.length > 0) {
-        // If backend sent array of words
         setIsFullText(false);
         setWords(data);
       } else {
-        // Fallback if somehow data is weird
         setIsFullText(false);
-        setWords(["Error loading content"]);
-        console.warn("Unexpected API response:", data);
+        setWords(["Error loading online content"]);
+        console.warn("Unexpected data format from online API:", data);
       }
+  
     } catch (error) {
-      console.error("Failed to fetch words:", error);
-      setIsFullText(false);
-      setWords(["Error fetching words"]);
+      console.error("Failed to fetch from online API:", error);
+  
+      console.log("Falling back to fetching words from database...");
+      const fallbackData = await fetchWordsWithFallback(contentType);
+      console.log("Fetched from fallback (database):", fallbackData);
+  
+      if (fallbackData?.fullText) {
+        setIsFullText(true);
+        setWords([fallbackData.fullText]);
+      } else if (Array.isArray(fallbackData) && fallbackData.length > 0) {
+        setIsFullText(false);
+        setWords(fallbackData);
+      } else {
+        setIsFullText(false);
+        setWords(["Error loading database content"]);
+        console.warn("Unexpected data format from fallback:", fallbackData);
+      }
     } finally {
       setIsLoading(false);
     }
   };
+  
+  
   
 
   useEffect(() => {
