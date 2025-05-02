@@ -25,7 +25,7 @@ app.use('/api/results', resultRoutes);
 
 
 // Connect to MongoDB and seed database if needed
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/typing_practice')
+mongoose.connect(process.env.MONGODB_URI || 'mongodb+srv://nikhiltripathy30403:nikhiltripathy30403@cluster0.ffmsf4j.mongodb.net/typing_practice?retryWrites=true&w=majority&appName=Cluster0')
   .then(() => {
     console.log('Connected to MongoDB');
     if (process.env.SEED_DATABASE === 'true') {
