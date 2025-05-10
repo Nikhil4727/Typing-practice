@@ -141,7 +141,7 @@ const numberContent = [
 ];
 
 // Famous quotes
-const quoteContent = [
+const sentenceContent = [
   "Be yourself; everyone else is already taken. - Oscar Wilde",
   "The only way to do great work is to love what you do. - Steve Jobs",
   "Life is what happens when you're busy making other plans. - John Lennon",
@@ -181,9 +181,9 @@ const seedDatabase = async () => {
     })));
     
     // Insert quote content
-    await Word.insertMany(quoteContent.map(quote => ({
+    await Word.insertMany(sentenceContent.map(sentence => ({
       text: quote,
-      type: 'quote'
+      type: 'sentence'
     })));
 
     console.log(`✅ Seeded database with multiple content types`);
