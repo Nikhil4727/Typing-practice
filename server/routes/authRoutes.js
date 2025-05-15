@@ -7,7 +7,7 @@ import User from '../models/User.js';
 import Result from '../models/Result.js';
 import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
 
 // Ensure environment variables are loaded
