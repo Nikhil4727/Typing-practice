@@ -1,17 +1,32 @@
-import express from 'express';
-import User from '../models/User.js'; // Make sure the path is correct
-import jwt from 'jsonwebtoken';
 
+
+
+
+import express from 'express';
+import User from '../models/User.js';
 import Result from '../models/Result.js';
+import jwt from 'jsonwebtoken';
+import mongoose from 'mongoose';
+import bcrypt from 'bcrypt';
+import dotenv from 'dotenv';
+
+// Ensure environment variables are loaded
+dotenv.config();
 
 const router = express.Router();
+
+// Get JWT_SECRET from environment variables
+const JWT_SECRET = process.env.JWT_SECRET;
+
+// Log JWT_SECRET status for debugging (don't log the actual secret)
+console.log('JWT_SECRET status:', JWT_SECRET ? 'Available' : 'Missing');
 
 router.post('/register', async (req, res) => {
   console.log('Incoming data:', req.body);
   const { username, email, password } = req.body;
 
   // Basic validation
-  if (!username || !email || !password) {
+  if (!email || !password) {
     return res.status(400).json({ message: 'All fields are required' });
   }
 
@@ -22,8 +37,16 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ message: 'User already exists' });
     }
 
-    // Create new user
-    const newUser = new User({ username, email, password });
+    // Hash the password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    // Create new user with hashed password
+    const newUser = new User({ 
+      username: username || email.split('@')[0], // Use email prefix if username not provided
+      email, 
+      password: hashedPassword 
+    });
 
     // Save to MongoDB
     await newUser.save();
@@ -35,9 +58,6 @@ router.post('/register', async (req, res) => {
   }
 });
 
-// In your server.js or middleware file
-
-// Create middleware for token verification
 // Enhanced token verification middleware
 const verifyToken = (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -52,10 +72,11 @@ const verifyToken = (req, res, next) => {
   console.log('Token received:', token.substring(0, 15) + '...');
   
   try {
-    // Log environment variables (excluding the actual secret)
-    console.log('JWT_SECRET defined:', process.env.JWT_SECRET ? 'Yes' : 'No');
+    if (!JWT_SECRET) {
+      throw new Error('JWT_SECRET is not configured');
+    }
     
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, JWT_SECRET);
     console.log('Token successfully verified! Decoded payload:', decoded);
     req.user = decoded;
     next();
@@ -82,7 +103,7 @@ router.post('/save', verifyToken, async (req, res) => {
 
   try {
     const newResult = new Result({
-      user: mongoose.Types.ObjectId(userId) ,
+      user: new  mongoose.Types.ObjectId(userId),
       wpm,
       accuracy,
       timeTaken,
@@ -98,31 +119,9 @@ router.post('/save', verifyToken, async (req, res) => {
   }
 });
 
-// router.post('/api/results/save', async (req, res) => {
-//   try {
-//     const { wpm, accuracy, timeTaken, text, date } = req.body;
-//     const userId = req.user?.id; // Assuming you're using some middleware to get user from token
-
-//     // Check if required fields are present
-//     if (!wpm || !accuracy || !text || !date || !userId) {
-//       return res.status(400).json({ success: false, message: 'Missing data' });
-//     }
-
-//     // Save result to DB (pseudo-code)
-//     await Result.create({ userId, wpm, accuracy, timeTaken, text, date });
-
-//     res.status(200).json({ success: true, message: 'Result saved' });
-//   } catch (err) {
-//     console.error('Error saving result:', err);
-//     res.status(500).json({ success: false, message: 'Server error' });
-//   }
-// });
-
-
-
-
-
 router.post('/login', async (req, res) => {
+  console.log('Login attempt with:', { email: req.body.email, passwordProvided: !!req.body.password });
+  
   const { email, password } = req.body;
 
   // Check for missing fields
@@ -131,33 +130,58 @@ router.post('/login', async (req, res) => {
   }
 
   try {
+    // Verify JWT_SECRET is set
+    if (!JWT_SECRET) {
+      console.error('JWT_SECRET is not configured in environment variables');
+      return res.status(500).json({ message: 'Server configuration error' });
+    }
+
     // Check if user exists
     const user = await User.findOne({ email });
+    console.log('User found:', user ? 'Yes' : 'No');
 
-    if (!user || user.password !== password) {
+    if (!user) {
       return res.status(400).json({ message: 'Invalid email or password' });
     }
 
-    // ✅ Generate token
+    // Check if we're using bcrypt for authentication
+    if (user.password.startsWith('$2')) {
+      // Password is hashed with bcrypt
+      const isPasswordValid = await bcrypt.compare(password, user.password);
+      if (!isPasswordValid) {
+        return res.status(400).json({ message: 'Invalid email or password' });
+      }
+    } else {
+      // Plain text password comparison (legacy support)
+      if (user.password !== password) {
+        return res.status(400).json({ message: 'Invalid email or password' });
+      }
+      
+      // Optional: Update to bcrypt hash for better security
+      console.log('Warning: User has plain text password. Consider updating to bcrypt.');
+    }
+
+    // Generate token
     const token = jwt.sign(
       { userId: user._id, username: user.username },
-      process.env.JWT_SECRET, // Make sure you have this in your .env
+      JWT_SECRET,
       { expiresIn: '1h' }
     );
 
-    // ✅ Send token back in response
+    console.log('Login successful for:', user.username);
+    
+    // Send token back in response
     res.status(200).json({
       message: 'Login successful',
       username: user.username,
       userId: user._id,
-      token // <-- your frontend can now receive and store this
+      token
     });
 
   } catch (err) {
     console.error('Login Error:', err);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ message: 'Internal server error', error: err.message });
   }
 });
-
 
 export default router;

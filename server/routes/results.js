@@ -1,154 +1,319 @@
+
+
+
+
+
+
+// // routes/results.js
 // import express from 'express';
+// import mongoose from 'mongoose';
 // import Result from '../models/Result.js';
 // import auth from '../middleware/auth.js';
 
 // const router = express.Router();
 
-// // POST /api/results/save
+// // Save a new typing result (protected route)
 // router.post('/save', auth, async (req, res) => {
 //   try {
-//     const { accuracy, wpm } = req.body;
-//     const result = new Result({ userId: req.user.userId, accuracy, wpm });
-//     await result.save();
-//     res.status(201).json({ message: 'Performance saved' });
+//     // Get user ID from auth middleware
+//     const userId = req.user.id || req.user.userId;
+
+//     if (!userId) {
+//       return res.status(401).json({ 
+//         success: false, 
+//         message: 'User ID not found in token' 
+//       });
+//     }
+
+//     // Validate request body
+//     const { wpm, accuracy, timeTaken, text } = req.body;
+    
+//     if (!wpm || !accuracy || !timeTaken || !text) {
+//       return res.status(400).json({ 
+//         success: false, 
+//         message: 'Missing required fields' 
+//       });
+//     }
+
+//     // Debug log
+//     console.log(`Saving result for user ${userId}: WPM=${wpm}, Accuracy=${accuracy}%`);
+
+//     // Create new result document
+//     const newResult = new Result({
+//       user: new mongoose.Types.ObjectId(userId),
+//       wpm,
+//       accuracy,
+//       timeTaken,
+//       text,
+//       date: new Date()
+//     });
+
+//     // Save to database
+//     const savedResult = await newResult.save();
+    
+//     // Success response
+//     res.status(201).json({
+//       success: true,
+//       message: 'Result saved successfully',
+//       result: savedResult
+//     });
+    
 //   } catch (error) {
-//     res.status(500).json({ message: 'Failed to save performance' });
+//     console.error('Error saving result:', error);
+//     res.status(500).json({
+//       success: false,
+//       message: 'Server error while saving result',
+//       error: error.message
+//     });
 //   }
 // });
 
-// // GET /api/results/me
-// router.get('/me', auth, async (req, res) => {
+// // Get user's typing history (protected route)
+// router.get('/history', auth, async (req, res) => {
 //   try {
-//     const results = await Result.find({ userId: req.user.userId }).sort({ createdAt: -1 });
-//     res.json(results);
+//     const userId = req.user.id || req.user.userId;
+    
+//     const results = await Result.find({ user: userId })
+//       .sort({ date: -1 })
+//       .limit(10);
+      
+//     res.status(200).json({
+//       success: true,
+//       results
+//     });
 //   } catch (error) {
-//     res.status(500).json({ message: 'Failed to fetch performances' });
+//     console.error('Error fetching history:', error);
+//     res.status(500).json({
+//       success: false,
+//       message: 'Server error while fetching history'
+//     });
+//   }
+// });
+
+// // Get user's statistics (protected route)
+// router.get('/stats', auth, async (req, res) => {
+//   try {
+//     const userId = req.user.id || req.user.userId;
+    
+//     // Get all user results
+//     const results = await Result.find({ user: userId });
+    
+//     if (results.length === 0) {
+//       return res.status(200).json({
+//         success: true,
+//         message: 'No results found',
+//         stats: {
+//           totalTests: 0,
+//           avgWpm: 0,
+//           avgAccuracy: 0,
+//           bestWpm: 0
+//         }
+//       });
+//     }
+    
+//     // Calculate statistics
+//     const totalTests = results.length;
+//     const avgWpm = Math.round(results.reduce((sum, r) => sum + r.wpm, 0) / totalTests);
+//     const avgAccuracy = Math.round(results.reduce((sum, r) => sum + r.accuracy, 0) / totalTests);
+//     const bestWpm = Math.max(...results.map(r => r.wpm));
+    
+//     res.status(200).json({
+//       success: true,
+//       stats: {
+//         totalTests,
+//         avgWpm,
+//         avgAccuracy,
+//         bestWpm
+//       }
+//     });
+//   } catch (error) {
+//     console.error('Error fetching stats:', error);
+//     res.status(500).json({
+//       success: false,
+//       message: 'Server error while fetching statistics'
+//     });
 //   }
 // });
 
 // export default router;
 
 
-// routes/results.js
-// routes/results.js
 import express from 'express';
+import mongoose from 'mongoose';
 import Result from '../models/Result.js';
-import mongoose from 'mongoose'; // Import mongoose for ObjectId handling
 import auth from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Save typing result - Protected route
+// Save a new typing result (protected route)
 router.post('/save', auth, async (req, res) => {
   try {
-    const { wpm, accuracy, timeTaken, text, date } = req.body;
-    const userId = req.user.userId || req.user.id; // Handle both possible properties
-    
+    // Get user ID from auth middleware
+    const userId = req.user.id || req.user.userId;
+
     if (!userId) {
-      return res.status(400).json({ 
+      return res.status(401).json({ 
         success: false, 
         message: 'User ID not found in token' 
       });
     }
+
+    // Validate request body
+    const { wpm, accuracy, timeTaken, text } = req.body;
     
-    console.log('Creating result with user ID:', userId);
-    
+    if (!wpm || !accuracy || !timeTaken || !text) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Missing required fields' 
+      });
+    }
+
+    // Debug log
+    console.log(`Saving result for user ${userId}: WPM=${wpm}, Accuracy=${accuracy}%`);
+
+    // Create new result document
     const newResult = new Result({
-      user: new mongoose.Types.ObjectId(userId), // Ensure proper ObjectId conversion
+      user: new mongoose.Types.ObjectId(userId),
       wpm,
       accuracy,
       timeTaken,
       text,
-      date
+      date: new Date()
     });
 
+    // Save to database
     const savedResult = await newResult.save();
     
-    res.json({ success: true, result: savedResult });
-  } catch (err) {
-    console.error('Error saving result:', err);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Server error', 
-      error: err.message 
+    // Success response
+    res.status(201).json({
+      success: true,
+      message: 'Result saved successfully',
+      result: savedResult
     });
-  }
-});
-
-// Get user's results - Protected route
-router.get('/user', auth, async (req, res) => {
-  try {
-    const userId = req.user.userId || req.user.id;
     
-    const results = await Result.find({ user: userId })
-      .sort({ date: -1 })
-      .limit(10);
-
-    res.json(results);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
-// In routes/results.js
-router.get('/summary', auth, async (req, res) => {
-  try {
-    const userId = req.user.userId || req.user.id;
-    
-    // Find all results for this user
-    const results = await Result.find({ user: new mongoose.Types.ObjectId(userId) });
-    
-    // Calculate summary stats
-    const totalTests = results.length;
-    const averageWpm = results.length > 0 
-      ? results.reduce((sum, result) => sum + result.wpm, 0) / results.length 
-      : 0;
-    const averageAccuracy = results.length > 0 
-      ? results.reduce((sum, result) => sum + result.accuracy, 0) / results.length 
-      : 0;
-    const bestWpm = results.length > 0 
-      ? Math.max(...results.map(result => result.wpm)) 
-      : 0;
-    
-    res.json({
-      totalTests,
-      averageWpm,
-      averageAccuracy,
-      bestWpm
-    });
   } catch (error) {
-    console.error('Error fetching summary stats:', error);
-    res.status(500).json({ success: false, message: 'Server error', error: error.message });
+    console.error('Error saving result:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while saving result',
+      error: error.message
+    });
   }
 });
 
-// In routes/results.js
-router.get('/', auth, async (req, res) => {
+// Get user's typing history with filtering (protected route)
+router.get('/history', auth, async (req, res) => {
   try {
-    const userId = req.user.userId || req.user.id;
+    const userId = req.user.id || req.user.userId;
     const timeframe = req.query.timeframe || 'all';
     
-    let query = { user: new mongoose.Types.ObjectId(userId) };
+    // Set up date filter
+    let dateFilter = {};
+    const now = new Date();
     
-    // Add date filters based on timeframe
     if (timeframe === 'week') {
-      const lastWeek = new Date();
-      lastWeek.setDate(lastWeek.getDate() - 7);
-      query.date = { $gte: lastWeek };
-    } else if (timeframe === 'month') {
-      const lastMonth = new Date();
-      lastMonth.setMonth(lastMonth.getMonth() - 1);
-      query.date = { $gte: lastMonth };
+      const weekAgo = new Date();
+      weekAgo.setDate(now.getDate() - 7);
+      dateFilter = { date: { $gte: weekAgo } };
+    } 
+    else if (timeframe === 'month') {
+      const monthAgo = new Date();
+      monthAgo.setMonth(now.getMonth() - 1);
+      dateFilter = { date: { $gte: monthAgo } };
     }
     
-    // Find results and sort by date descending (newest first)
-    const results = await Result.find(query).sort({ date: -1 });
+    // Combine user filter with date filter
+    const query = { 
+      user: userId,
+      ...dateFilter
+    };
     
-    res.json(results);
+    console.log('History query:', query);
+    
+    const results = await Result.find(query)
+      .sort({ date: -1 })
+      .limit(20); // Increased limit to show more historical data
+      
+    res.status(200).json({
+      success: true,
+      results
+    });
   } catch (error) {
-    console.error('Error fetching results:', error);
-    res.status(500).json({ success: false, message: 'Server error', error: error.message });
+    console.error('Error fetching history:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while fetching history'
+    });
+  }
+});
+
+// Get user's statistics (protected route) 
+router.get('/stats', auth, async (req, res) => {
+  try {
+    const userId = req.user.id || req.user.userId;
+    const timeframe = req.query.timeframe || 'all';
+    
+    // Set up date filter similar to history endpoint
+    let dateFilter = {};
+    const now = new Date();
+    
+    if (timeframe === 'week') {
+      const weekAgo = new Date();
+      weekAgo.setDate(now.getDate() - 7);
+      dateFilter = { date: { $gte: weekAgo } };
+    } 
+    else if (timeframe === 'month') {
+      const monthAgo = new Date();
+      monthAgo.setMonth(now.getMonth() - 1);
+      dateFilter = { date: { $gte: monthAgo } };
+    }
+    
+    // Combine user filter with date filter
+    const query = { 
+      user: userId,
+      ...dateFilter
+    };
+    
+    // Get all user results matching the filter
+    const results = await Result.find(query);
+    
+    console.log(`Found ${results.length} results for user ${userId} with timeframe ${timeframe}`);
+    
+    if (results.length === 0) {
+      return res.status(200).json({
+        success: true,
+        message: 'No results found',
+        stats: {
+          totalTests: 0,
+          avgWpm: 0,
+          avgAccuracy: 0,
+          bestWpm: 0
+        }
+      });
+    }
+    
+    // Calculate statistics
+    const totalTests = results.length;
+    const avgWpm = Math.round(results.reduce((sum, r) => sum + r.wpm, 0) / totalTests);
+    const avgAccuracy = Math.round(results.reduce((sum, r) => sum + r.accuracy, 0) / totalTests);
+    const bestWpm = Math.max(...results.map(r => r.wpm));
+    
+    // Return nicely formatted response
+    res.status(200).json({
+      success: true,
+      stats: {
+        totalTests,
+        avgWpm,
+        avgAccuracy,
+        bestWpm
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching stats:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while fetching statistics'
+    });
   }
 });
 

@@ -1,3 +1,20 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.dark .practice-area {
+  @apply bg-gray-800 border-gray-700;
+}
+
+.dark .typing-input {
+  @apply bg-gray-700 text-white border-gray-600;
+}
+
+/* Any other dark mode specific styles */
+.dark .card {
+  @apply bg-gray-800 border-gray-700;
+}
+
+.dark .button-primary {
+  @apply bg-blue-600 hover:bg-blue-700;
+}

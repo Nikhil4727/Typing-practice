@@ -1,7 +1,124 @@
+// import React, { useState } from 'react';
+// import axios from 'axios';
+
+// const Register = () => {
+//   const [formData, setFormData] = useState({
+//     username: '',
+//     email: '',
+//     password: '',
+//     confirmPassword: '',
+//   });
+
+//   const [loading, setLoading] = useState(false);
+//   const [error, setError] = useState('');
+//   const [userId, setUserId] = useState(null);
+
+//   const handleChange = (e) => {
+//     setFormData((prev) => ({
+//       ...prev,
+//       [e.target.name]: e.target.value,
+//     }));
+//   };
+
+//   const handleSubmit = async (e) => {
+//     e.preventDefault();
+
+//     if (formData.password !== formData.confirmPassword) {
+//       setError('Passwords do not match');
+//       return;
+//     }
+
+//     setError('');
+//     setLoading(true);
+
+//     try {
+//       const res = await axios.post('http://localhost:5000/api/auth/register', {
+//         username: formData.username,
+//         email: formData.email,
+//         password: formData.password,
+//       });
+
+//       setUserId(res.data.userId); // Optional: show ID if backend sends it
+//     } catch (err) {
+//       setError(err.response?.data?.message || 'Registration failed');
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   return (
+//     <div className="max-w-md mx-auto mt-20 p-6 bg-white shadow-md rounded-lg">
+//       <h2 className="text-2xl font-semibold text-center mb-6">Register</h2>
+      
+//       <form onSubmit={handleSubmit} className="space-y-4">
+//         <input
+//           type="text"
+//           name="username"
+//           placeholder="Username"
+//           required
+//           value={formData.username}
+//           onChange={handleChange}
+//           className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+//         />
+//         <input
+//           type="email"
+//           name="email"
+//           placeholder="Email"
+//           required
+//           value={formData.email}
+//           onChange={handleChange}
+//           className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+//         />
+//         <input
+//           type="password"
+//           name="password"
+//           placeholder="Password"
+//           required
+//           value={formData.password}
+//           onChange={handleChange}
+//           className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+//         />
+//         <input
+//           type="password"
+//           name="confirmPassword"
+//           placeholder="Confirm Password"
+//           required
+//           value={formData.confirmPassword}
+//           onChange={handleChange}
+//           className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+//         />
+
+//         <button
+//           type="submit"
+//           disabled={loading}
+//           className={`w-full py-2 text-white font-semibold rounded-md ${
+//             loading ? 'bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'
+//           }`}
+//         >
+//           {loading ? 'Registering...' : 'Register'}
+//         </button>
+//       </form>
+
+//       {error && <p className="text-red-600 mt-4 text-center">{error}</p>}
+//       {userId && (
+//         <p className="text-green-600 mt-4 text-center">
+//           Registration successful! Your ID: {userId}
+//         </p>
+//       )}
+//     </div>
+//   );
+// };
+
+// export default Register;
+
+
 import React, { useState } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+import getApiBaseUrl from '../../config/apiConfig';
 
 const Register = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -11,7 +128,7 @@ const Register = () => {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [userId, setUserId] = useState(null);
+  const [success, setSuccess] = useState('');
 
   const handleChange = (e) => {
     setFormData((prev) => ({
@@ -32,14 +149,18 @@ const Register = () => {
     setLoading(true);
 
     try {
-      const res = await axios.post('http://localhost:5000/api/auth/register', {
+      // Use API config to get proper backend URL
+      const apiUrl = getApiBaseUrl();
+      const res = await axios.post(`${apiUrl}/api/auth/register`, {
         username: formData.username,
         email: formData.email,
         password: formData.password,
       });
 
-      setUserId(res.data.userId); // Optional: show ID if backend sends it
+      setSuccess('Registration successful! Redirecting to login...');
+      setTimeout(() => navigate('/login'), 2000);
     } catch (err) {
+      console.error('Registration error:', err);
       setError(err.response?.data?.message || 'Registration failed');
     } finally {
       setLoading(false);
@@ -100,11 +221,7 @@ const Register = () => {
       </form>
 
       {error && <p className="text-red-600 mt-4 text-center">{error}</p>}
-      {userId && (
-        <p className="text-green-600 mt-4 text-center">
-          Registration successful! Your ID: {userId}
-        </p>
-      )}
+      {success && <p className="text-green-600 mt-4 text-center">{success}</p>}
     </div>
   );
 };

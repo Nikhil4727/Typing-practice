@@ -1,91 +1,8 @@
-// // components/Navbar.jsx
-// import React, { useState } from 'react';
-// import { Link, useNavigate } from 'react-router-dom';
-// import { useAuth } from '../context/AuthContext';
-
-// const Navbar = () => {
-//   const { user,loading, logout } = useAuth();
-//   if (loading) {
-//     return <div>Loading...</div>;
-//   }
-//   const navigate = useNavigate();
-//   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-
-//   const handleLogout = () => {
-//     logout();
-//     navigate('/');
-//   };
-
-//   return (
-//     <nav className="bg-blue-600 text-white px-6 py-4 flex justify-between items-center">
-//       <div className="text-xl font-bold">Typing Speed Master</div>
-//       <div className="flex items-center space-x-4 relative">
-//         <Link to="/" className="hover:underline">Practice</Link>
-        
-//         {user ? (
-//           <div className="flex items-center">
-//             <div className="relative">
-//               <button 
-//                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-//                 className="flex items-center space-x-1 hover:underline focus:outline-none"
-//               >
-//                 <span className="hidden md:inline">Hi, {user.name || user.email}</span>
-//                 <svg 
-//                   className={`w-5 h-5 transition-transform ${isDropdownOpen ? 'transform rotate-180' : ''}`}
-//                   fill="none" 
-//                   stroke="currentColor" 
-//                   viewBox="0 0 24 24"
-//                 >
-//                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-//                 </svg>
-//               </button>
-              
-//               {isDropdownOpen && (
-//                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
-//                   <Link 
-//                     to="/profile" 
-//                     className="block px-4 py-2 text-gray-800 hover:bg-blue-100"
-//                     onClick={() => setIsDropdownOpen(false)}
-//                   >
-//                     Profile
-//                   </Link>
-//                   <Link 
-//                     to="/stats" 
-//                     className="block px-4 py-2 text-gray-800 hover:bg-blue-100"
-//                     onClick={() => setIsDropdownOpen(false)}
-//                   >
-//                     My Stats
-//                   </Link>
-//                   <button
-//                     onClick={handleLogout}
-//                     className="block w-full text-left px-4 py-2 text-gray-800 hover:bg-blue-100"
-//                   >
-//                     Logout
-//                   </button>
-//                 </div>
-//               )}
-//             </div>
-//           </div>
-//         ) : (
-//           <>
-//             <Link to="/register" className="hover:underline">Register</Link>
-//             <Link to="/login" className="hover:underline">Login</Link>
-//           </>
-//         )}
-//       </div>
-//     </nav>
-//   );
-// };
-
-// export default Navbar;
-
-
-// components/Navbar.jsx
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-const Navbar = () => {
+const Navbar = ({ darkMode, setDarkMode }) => {
   const { user, loading, logout } = useAuth();
   const navigate = useNavigate();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -94,6 +11,22 @@ const Navbar = () => {
   const handleLogout = () => {
     logout();
     navigate('/');
+  };
+
+  const toggleDarkMode = () => {
+    // Toggle the dark mode state
+    const newDarkMode = !darkMode;
+    setDarkMode(newDarkMode);
+    
+    // Apply dark mode class to HTML element for global styling
+    if (newDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    
+    // Save preference to localStorage
+    localStorage.setItem('darkMode', newDarkMode);
   };
 
   if (loading) {
@@ -121,6 +54,29 @@ const Navbar = () => {
           <span className="hidden md:inline">Practice</span>
         </Link>
         
+        {/* Dark Mode Toggle */}
+        <button
+          onClick={toggleDarkMode}
+          className="flex items-center space-x-1 hover:text-blue-200 transition-colors focus:outline-none"
+          aria-label={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+        >
+          {darkMode ? (
+            <span className="flex items-center space-x-1">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
+              <span className="hidden md:inline">Light</span>
+            </span>
+          ) : (
+            <span className="flex items-center space-x-1">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+              </svg>
+              <span className="hidden md:inline">Dark</span>
+            </span>
+          )}
+        </button>
+        
         {user ? (
           <div className="relative">
             <button 
@@ -144,10 +100,10 @@ const Navbar = () => {
             </button>
             
             {isDropdownOpen && (
-              <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
+              <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg py-1 z-50">
                 <Link 
                   to="/profile" 
-                  className="block px-4 py-2 text-gray-800 hover:bg-blue-100 flex items-center"
+                  className="block px-4 py-2 text-gray-800 dark:text-gray-200 hover:bg-blue-100 dark:hover:bg-blue-900 flex items-center"
                   onClick={() => setIsDropdownOpen(false)}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -157,7 +113,7 @@ const Navbar = () => {
                 </Link>
                 <Link 
                   to="/stats" 
-                  className="block px-4 py-2 text-gray-800 hover:bg-blue-100 flex items-center"
+                  className="block px-4 py-2 text-gray-800 dark:text-gray-200 hover:bg-blue-100 dark:hover:bg-blue-900 flex items-center"
                   onClick={() => setIsDropdownOpen(false)}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -167,7 +123,7 @@ const Navbar = () => {
                 </Link>
                 <button
                   onClick={handleLogout}
-                  className="block w-full text-left px-4 py-2 text-gray-800 hover:bg-blue-100 flex items-center"
+                  className="block w-full text-left px-4 py-2 text-gray-800 dark:text-gray-200 hover:bg-blue-100 dark:hover:bg-blue-900 flex items-center"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -197,10 +153,10 @@ const Navbar = () => {
             </button>
             
             {isAuthDropdownOpen && (
-              <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
+              <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg py-1 z-50">
                 <Link 
                   to="/register" 
-                  className="block px-4 py-2 text-gray-800 hover:bg-blue-100 flex items-center"
+                  className="block px-4 py-2 text-gray-800 dark:text-gray-200 hover:bg-blue-100 dark:hover:bg-blue-900 flex items-center"
                   onClick={() => setIsAuthDropdownOpen(false)}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -210,7 +166,7 @@ const Navbar = () => {
                 </Link>
                 <Link 
                   to="/login" 
-                  className="block px-4 py-2 text-gray-800 hover:bg-blue-100 flex items-center"
+                  className="block px-4 py-2 text-gray-800 dark:text-gray-200 hover:bg-blue-100 dark:hover:bg-blue-900 flex items-center"
                   onClick={() => setIsAuthDropdownOpen(false)}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
