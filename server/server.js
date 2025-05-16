@@ -180,7 +180,7 @@ if (process.env.NODE_ENV === 'production') {
   app.use(express.static(staticPath));
   
   // Fix: Correct the route handler for serving the SPA
-  app.get('*', (req, res, next) => {
+  app.get('/*', (req, res, next) => {
     try {
       const fullUrl = req.originalUrl;
       if (fullUrl.startsWith('http')) {

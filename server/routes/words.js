@@ -1,14 +1,4 @@
-// import express from 'express';
-// import Word from '../models/Words.js';
 
-// const router = express.Router();
-
-// // GET /api/words/random
-// router.get('/random', async (req, res) => {
-//   const words = await Word.aggregate([{ $sample: { size: 15 } }]);
-//   res.json(words.map(w => w.text)); // Changed from w.word to w.text
-// });
-// export default router;
 
 
 
