@@ -1,7 +1,3 @@
-
-
-
-
 import express from 'express';
 import User from '../models/User.js';
 import Result from '../models/Result.js';
