@@ -4,7 +4,7 @@ import Word from '../models/Words.js';
 
 const router = express.Router();
 
-router.get('/sentence', async (req, res) => {
+router.get('/', async (req, res) => {
   try {
     // Primary: Fetch random words from external API
     const response = await axios.get('https://random-word-api.herokuapp.com/word?number=7');
