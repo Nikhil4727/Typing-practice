@@ -60,7 +60,7 @@ if (!process.env.JWT_SECRET) {
 
 // Mount API routes
 app.use('/api/auth', authRoutes);
-app.use('/api', sentenceRoutes);
+app.use('/api/sentence', sentenceRoutes);
 app.use('/api/words', wordsRoutes);
 app.use('/api/results', resultRoutes);
 
