@@ -180,7 +180,7 @@ if (process.env.NODE_ENV === 'production') {
   app.use(express.static(staticPath));
   
   // Fix: Correct the route handler for serving the SPA
-   app.get('/:path*', (req, res) => {
+   app.get('/*', (req, res) => {
     res.sendFile(path.join(staticPath, 'index.html'));
   });
 }
