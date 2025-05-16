@@ -180,18 +180,8 @@ if (process.env.NODE_ENV === 'production') {
   app.use(express.static(staticPath));
   
   // Fix: Correct the route handler for serving the SPA
-  app.get('/*', (req, res, next) => {
-    try {
-      const fullUrl = req.originalUrl;
-      if (fullUrl.startsWith('http')) {
-        console.warn('Blocked suspicious request:', fullUrl);
-        return res.status(400).send('Bad request');
-      }
-
-      res.sendFile(path.join(staticPath, 'index.html'));
-    } catch (err) {
-      next(err);
-    }
+   app.get('/:path*', (req, res) => {
+    res.sendFile(path.join(staticPath, 'index.html'));
   });
 }
 
