@@ -69,9 +69,20 @@ if (process.env.NODE_ENV === 'production') {
   const staticPath = path.join(__dirname, 'client', 'build');
   app.use(express.static(staticPath));
   
-  app.get('*', (req, res) => {
+ app.get('*', (req, res, next) => {
+  try {
+    const fullUrl = req.originalUrl;
+    if (fullUrl.startsWith('http')) {
+      console.warn('Blocked suspicious request:', fullUrl);
+      return res.status(400).send('Bad request');
+    }
+
     res.sendFile(path.join(staticPath, 'index.html'));
-  });
+  } catch (err) {
+    next(err);
+  }
+});
+
 }
 
 // Connect to MongoDB
