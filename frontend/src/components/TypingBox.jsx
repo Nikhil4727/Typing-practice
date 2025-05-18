@@ -33,7 +33,7 @@ const TypingBox = ({ darkMode, setDarkMode }) => {
       
       // Use HTTPS for all external APIs to avoid mixed content issues
       if (contentType === "word") {
-        apiUrl = "https://random-word-api.herokuapp.com/word?number=10";
+        apiUrl = "https://random-word-api.vercel.app/api?words=20";
       } else if (contentType === "sentence") {
         apiUrl = "https://metaphorpsum.com/sentences/5"; // Changed to HTTPS
       } else if (contentType === "punctuation") {
