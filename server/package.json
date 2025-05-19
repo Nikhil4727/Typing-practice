@@ -4,11 +4,11 @@
     "scripts": {
         "start": "node server.js",
         "dev": "node server.js",
-        "build": "... your existing build steps ... && npm rebuild bcrypt --update-binary"
+        "build": "npm install"
     },
     "dependencies": {
         "axios": "^1.8.4",
-       "bcryptjs": "^2.4.3",
+        "bcryptjs": "^2.4.3",
         "cors": "^2.8.5",
         "dotenv": "^16.5.0",
         "express": "^5.1.0",
