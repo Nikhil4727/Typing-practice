@@ -7,7 +7,7 @@ const getApiBaseUrl = () => {
   // Use localhost URL in development, deployed URL in production
   return isDev 
     ? 'http://localhost:5000' 
-    : 'https://your-frontend-domain.onrender.com'; // Replace with your actual backend URL when deployed
+    : 'https://typing-practice-1.onrender.com'; // Replace with your actual backend URL when deployed
 };
 
 export default getApiBaseUrl;
