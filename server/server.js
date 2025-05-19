@@ -159,117 +159,92 @@ app.use('/api/sentence', sentenceRoutes);
 app.use('/api/words', wordsRoutes);
 app.use('/api/results', resultRoutes);
 
-// Debug potential client build paths in production
+// Serve static files in production
 if (process.env.NODE_ENV === 'production') {
-  console.log('Checking for client build files...');
+  console.log('Setting up static file serving for production...');
   
-  // Define possible build paths to check
-  const potentialPaths = [
-    path.join(__dirname, 'client', 'build'),
-    path.join(__dirname, '..', 'client', 'build'),
-    path.join(__dirname, '..', 'client', 'dist'),
-    path.join(__dirname, 'client', 'dist'),
-    path.join(__dirname, '..', '..', 'client', 'build'),
-    path.join(__dirname, '..', '..', 'client', 'dist')
+  // Based on the Vite structure, we know we need to look for frontend/dist
+  const potentialBuildPaths = [
+    path.join(__dirname, '..', 'frontend', 'dist'),  // From /server to /frontend/dist
+    path.join('/opt/render/project/src/frontend/dist'), // Absolute path for Render
   ];
   
-  // Check each path and log results
-  let foundPath = null;
-  potentialPaths.forEach(pathToCheck => {
+  let foundBuildPath = null;
+  
+  // Check each potential path for the build files
+  for (const buildPath of potentialBuildPaths) {
     try {
-      const indexPath = path.join(pathToCheck, 'index.html');
+      const indexPath = path.join(buildPath, 'index.html');
+      console.log(`Checking for index.html at: ${indexPath}`);
+      
       if (fs.existsSync(indexPath)) {
-        console.log(`✅ Found client build at: ${pathToCheck}`);
-        foundPath = pathToCheck;
-      } else {
-        console.log(`❌ No index.html found at: ${pathToCheck}`);
+        console.log(`✅ Found frontend build at: ${buildPath}`);
+        foundBuildPath = buildPath;
+        break;
       }
     } catch (err) {
-      console.log(`❌ Error checking path ${pathToCheck}: ${err.message}`);
+      console.log(`Error checking path ${buildPath}: ${err.message}`);
     }
-  });
+  }
   
-  // If we found a valid path, use it
-  if (foundPath) {
-    console.log(`Using client build path: ${foundPath}`);
-    app.use(express.static(foundPath));
+  // If we found a valid build path, use it
+  if (foundBuildPath) {
+    console.log(`Using frontend build path: ${foundBuildPath}`);
     
-    // Catch-all route to serve the index.html
+    // Serve static files from the build directory
+    app.use(express.static(foundBuildPath));
+    
+    // Catch-all route for SPA to handle client-side routing
     app.get('*', (req, res) => {
-      res.sendFile(path.join(foundPath, 'index.html'));
+      // Skip API routes
+      if (req.path.startsWith('/api/')) {
+        return next();
+      }
+      
+      res.sendFile(path.join(foundBuildPath, 'index.html'));
     });
   } else {
-    // Check if we're running in a Render.com environment
-    if (process.env.RENDER) {
-      console.log('Running on Render.com, checking Render-specific paths...');
-      
-      // On Render, the structure might be different
-      const renderPath = '/opt/render/project/src';
-      console.log(`Searching for client build in: ${renderPath}`);
-      
-      try {
-        // List directories in the Render path to help with debugging
-        const dirs = fs.readdirSync(renderPath);
-        console.log(`Directories in ${renderPath}:`, dirs);
-      } catch (err) {
-        console.log(`Error reading ${renderPath}: ${err.message}`);
-      }
-      
-      // Add more specific debug info for common Render paths
-      const renderPaths = [
-        path.join(renderPath, 'client', 'build'),
-        path.join(renderPath, 'client', 'dist'),
-        path.join(renderPath, 'build'),
-        path.join(renderPath, 'dist')
-      ];
-      
-      renderPaths.forEach(pathToCheck => {
-        try {
-          if (fs.existsSync(pathToCheck)) {
-            console.log(`✅ Directory exists: ${pathToCheck}`);
-            try {
-              const files = fs.readdirSync(pathToCheck);
-              console.log(`Files in ${pathToCheck}:`, files);
-              if (files.includes('index.html')) {
-                console.log(`✅ Found index.html in: ${pathToCheck}`);
-                foundPath = pathToCheck;
-              }
-            } catch (err) {
-              console.log(`Error reading ${pathToCheck}: ${err.message}`);
-            }
-          } else {
-            console.log(`❌ Directory does not exist: ${pathToCheck}`);
+    // Check frontend directory structure to help with debugging
+    console.log('No build files found. Checking frontend directory structure...');
+    
+    try {
+      const frontendPath = path.join('/opt/render/project/src/frontend');
+      if (fs.existsSync(frontendPath)) {
+        const frontendFiles = fs.readdirSync(frontendPath);
+        console.log(`Files/directories in frontend: ${frontendFiles.join(', ')}`);
+        
+        // Look for typical build script locations
+        if (frontendFiles.includes('package.json')) {
+          console.log('Found package.json in frontend directory.');
+          
+          try {
+            const packageJsonPath = path.join(frontendPath, 'package.json');
+            const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+            console.log('Build scripts in package.json:', packageJson.scripts ? Object.keys(packageJson.scripts) : 'None');
+          } catch (err) {
+            console.log('Error reading package.json:', err.message);
           }
-        } catch (err) {
-          console.log(`Error checking path ${pathToCheck}: ${err.message}`);
         }
-      });
-      
-      if (foundPath) {
-        console.log(`Using client build path: ${foundPath}`);
-        app.use(express.static(foundPath));
-        
-        // Catch-all route to serve the index.html
-        app.get('*', (req, res) => {
-          res.sendFile(path.join(foundPath, 'index.html'));
-        });
       } else {
-        console.error('⚠️ No client build found! Configuring API-only mode.');
-        
-        // API-only fallback route
-        app.get('/', (req, res) => {
-          res.json({ 
-            status: 'API running',
-            message: 'Client build not found. This server is running in API-only mode.',
-            endpoints: ['/api/auth', '/api/sentence', '/api/words', '/api/results']
-          });
-        });
+        console.log('Frontend directory not found at expected location');
       }
+    } catch (err) {
+      console.log(`Error checking frontend directory: ${err.message}`);
     }
+    
+    // Fall back to API-only mode
+    console.log('⚠️ No frontend build found! Running in API-only mode.');
+    app.get('/', (req, res) => {
+      res.json({ 
+        status: 'API running',
+        message: 'Frontend build not found. This server is running in API-only mode.',
+        endpoints: ['/api/auth', '/api/sentence', '/api/words', '/api/results']
+      });
+    });
   }
 }
 
-// Error handling middleware - move this after all routes including the catch-all
+// Error handling middleware
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);
   res.status(500).json({ 
