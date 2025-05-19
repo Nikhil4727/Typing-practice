@@ -27,7 +27,7 @@ console.log("- PORT:", process.env.PORT || "5000");
 // Configure CORS
 const corsOptions = {
   origin: process.env.NODE_ENV === 'production' 
-    ? ['https://typing-practice-3.onrender.com', 'https://typing-practice-usg6.onrender.com'] // Update with your domain
+    ? ['https://typing-practice-3.onrender.com', 'https://typing-practice-usg6.onrender.com']
     : 'http://localhost:5173',
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -42,15 +42,6 @@ app.use(express.json());
 app.use((req, res, next) => {
   console.log(`${req.method} ${req.path} - ${new Date().toISOString()}`);
   next();
-});
-
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error('Unhandled error:', err);
-  res.status(500).json({ 
-    message: 'Server error', 
-    error: process.env.NODE_ENV === 'production' ? 'Internal server error' : err.message 
-  });
 });
 
 // Check JWT_SECRET
@@ -69,11 +60,21 @@ if (process.env.NODE_ENV === 'production') {
   const staticPath = path.join(__dirname, 'client', 'build');
   app.use(express.static(staticPath));
   
-  // Fix: Correct the route handler for serving the SPA
-   app.get('/*', (req, res) => {
+  // Try a different approach to the catch-all route
+  // Instead of '*' or '/*', use explicit middleware
+  app.use((req, res) => {
     res.sendFile(path.join(staticPath, 'index.html'));
   });
 }
+
+// Error handling middleware - move this after all routes including the catch-all
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err);
+  res.status(500).json({ 
+    message: 'Server error', 
+    error: process.env.NODE_ENV === 'production' ? 'Internal server error' : err.message 
+  });
+});
 
 // Connect to MongoDB
 const MONGODB_URI = process.env.MONGODB_URI;
