@@ -92,7 +92,7 @@ const Profile = () => {
   useEffect(() => {
     const fetchUserStats = async () => {
       try {
-        const res = await axios.get('http://localhost:5000/api/results/stats', {
+        const res = await axios.get('https://typing-practice-1.onrender.com/api/results/stats', {
           headers: { Authorization: `Bearer ${user.token}` }
         });
         setStats(res.data.stats || res.data);
